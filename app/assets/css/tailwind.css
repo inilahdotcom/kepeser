@@ -1,0 +1,122 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/ibm-plex-sans";
+
+/* Token DESIGN.md. Satu tema (kanvas krem) — DESIGN.md tidak mendefinisikan dark mode,
+   jadi tidak ada yang dikarang di sini. */
+:root {
+  --radius: 6px;
+
+  /* Surface */
+  --background: #eeefe9;        /* canvas — krem, bukan putih. Ini brand-nya. */
+  --foreground: #23251d;        /* ink */
+  --card: #ffffff;
+  --card-foreground: #23251d;
+  --popover: #ffffff;
+  --popover-foreground: #23251d;
+  --surface-soft: #e5e7e0;
+  --surface-doc: #fcfcfa;
+
+  /* Satu-satunya warna jenuh di sistem ini */
+  --primary: #f7a501;
+  --primary-foreground: #23251d;
+  --primary-pressed: #dd9001;
+
+  --secondary: #e5e7e0;
+  --secondary-foreground: #23251d;
+  --muted: #e5e7e0;
+  --muted-foreground: #6c6e63;
+  --accent: #e5e7e0;
+  --accent-foreground: #23251d;
+
+  --destructive: #cd4239;
+  --destructive-foreground: #ffffff;
+
+  --border: #bfc1b7;            /* hairline */
+  --border-soft: #dcdfd2;
+  --input: #bfc1b7;
+  --ring: #2c84e0;
+
+  /* Teks bertingkat */
+  --body: #4d4f46;
+  --charcoal: #33342d;
+  --ash: #9b9c92;
+  --stone: #b6b7af;
+  --link: #1078a3;
+
+  /* Pastel callout — dipakai untuk badge status tiket */
+  --tone-blue: #1d4ed8;
+  --tone-blue-soft: #dceaf6;
+  --tone-green: #2c8c66;
+  --tone-green-soft: #d9eddf;
+  --tone-red: #cd4239;
+  --tone-red-soft: #f7d6d3;
+  --tone-purple: #7c44a6;
+  --tone-purple-soft: #e7d8ee;
+}
+
+@theme inline {
+  --font-sans: "IBM Plex Sans Variable", "IBM Plex Sans", -apple-system, system-ui, sans-serif;
+  --font-mono: ui-monospace, "Source Code Pro", monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-pressed: var(--primary-pressed);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-soft: var(--border-soft);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-doc: var(--surface-doc);
+  --color-body: var(--body);
+  --color-charcoal: var(--charcoal);
+  --color-ash: var(--ash);
+  --color-stone: var(--stone);
+  --color-link: var(--link);
+
+  --color-tone-blue: var(--tone-blue);
+  --color-tone-blue-soft: var(--tone-blue-soft);
+  --color-tone-green: var(--tone-green);
+  --color-tone-green-soft: var(--tone-green-soft);
+  --color-tone-red: var(--tone-red);
+  --color-tone-red-soft: var(--tone-red-soft);
+  --color-tone-purple: var(--tone-purple);
+  --color-tone-purple-soft: var(--tone-purple-soft);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-body font-sans;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  h1, h2, h3, h4 {
+    @apply text-foreground font-bold;
+  }
+  /* DESIGN.md: kartu datar di atas krem, border hairline, tanpa shadow. */
+  a {
+    @apply text-link;
+  }
+}
