@@ -10,7 +10,16 @@ const now = Math.floor(Date.now() / 1000)
 const kpiQuery = computed(() => ({ from: now - range.value * 86400, to: now }))
 
 const { data: kpi } = await useFetch('/api/kpi', { query: kpiQuery })
-const { data: mine } = await useFetch('/api/tickets', { query: { mine: '1' } })
+// Dua permintaan terpisah: "tugas aktif" harus utuh (dan memang sedikit),
+// sedangkan "semua tugas saya" bisa ratusan jadi dibuat berhalaman.
+const { data: aktif } = await useFetch('/api/tickets', {
+  query: { mine: '1', status: 'approved,in_progress', perPage: 100 },
+})
+const page = ref(1)
+const PER_PAGE = 25
+const { data: mine } = await useFetch('/api/tickets', {
+  query: computed(() => ({ mine: '1', page: page.value, perPage: PER_PAGE })),
+})
 
 const me = computed(() => kpi.value?.staff.find((s: any) => s.id === user.value?.id))
 const pw = reactive({ currentPassword: '', newPassword: '', konfirmasi: '' })
@@ -33,9 +42,7 @@ async function gantiPassword() {
   }
 }
 
-const active = computed(() =>
-  (mine.value || []).filter((t: any) => t.status === 'approved' || t.status === 'in_progress'),
-)
+const active = computed(() => aktif.value?.rows ?? [])
 </script>
 
 <template>
@@ -59,8 +66,11 @@ const active = computed(() =>
   </h2>
   <TicketTable :rows="active" @changed="refreshNuxtData()" />
 
-  <h2 class="mt-10 text-lg font-bold text-foreground">Semua tugas saya</h2>
-  <TicketTable :rows="mine || []" @changed="refreshNuxtData()" />
+  <h2 class="mt-10 text-lg font-bold text-foreground">
+    Semua tugas saya <span class="text-mute-foreground">({{ mine?.total ?? 0 }})</span>
+  </h2>
+  <TicketTable :rows="mine?.rows ?? []" @changed="refreshNuxtData()" />
+  <Pagination v-model="page" :total="mine?.total ?? 0" :per-page="PER_PAGE" />
 
   <h2 class="mt-10 text-lg font-bold text-foreground">Ganti password</h2>
   <form

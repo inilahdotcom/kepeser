@@ -5,9 +5,21 @@ import { CATEGORY_LABEL, PRIORITY_LABEL, STATUS_LABEL, toOptions } from '~/lib/f
 useHead({ title: 'Tiket — Kepeser' })
 
 const filters = reactive({ status: '', category: '', priority: '', assigneeId: '' })
+const page = ref(1)
+const PER_PAGE = 25
+
 const { data: staff } = await useFetch('/api/users')
-const query = computed(() => Object.fromEntries(Object.entries(filters).filter(([, v]) => v)))
-const { data: rows, status } = await useFetch('/api/tickets', { query })
+const query = computed(() => ({
+  ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v)),
+  page: page.value,
+  perPage: PER_PAGE,
+}))
+const { data, status } = await useFetch('/api/tickets', { query })
+const rows = computed(() => data.value?.rows ?? [])
+
+// Filter berubah -> balik ke halaman 1. Tanpa ini, menyaring selagi di halaman 7
+// menghasilkan tabel kosong yang terlihat seperti "tidak ada hasil".
+watch(filters, () => (page.value = 1))
 
 const statusOptions = [{ value: '', label: 'Semua status' }, ...toOptions(STATUSES, STATUS_LABEL)]
 const categoryOptions = [
@@ -41,9 +53,6 @@ const staffOptions = computed(() => [
     <SelectField v-model="filters.assigneeId" size="sm" :options="staffOptions" class="sm:w-44" />
   </div>
 
-  <TicketTable
-    :rows="rows || []"
-    :loading="status === 'pending'"
-    @changed="refreshNuxtData()"
-  />
+  <TicketTable :rows="rows" :loading="status === 'pending'" @changed="refreshNuxtData()" />
+  <Pagination v-model="page" :total="data?.total ?? 0" :per-page="PER_PAGE" />
 </template>

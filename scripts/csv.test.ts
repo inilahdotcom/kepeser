@@ -56,3 +56,35 @@ test('kolom yang tidak ada di data jadi kosong, bukan "undefined"', () => {
   ])
   expect(out).toBe(`${BOM}A,B\r\n1,\r\n`)
 })
+
+import { parseCsv } from './csv.cjs'
+
+test('parseCsv: dasar — header jadi kunci', () => {
+  expect(parseCsv('a,b\r\n1,2\r\n')).toEqual([{ a: '1', b: '2' }])
+  expect(parseCsv('a,b\n1,2\n')).toEqual([{ a: '1', b: '2' }])
+})
+
+test('parseCsv: koma, kutip, dan baris baru di dalam sel tidak memecah baris', () => {
+  const csv = 'judul,jumlah\r\n"Judul, dengan ""kutip""\ndan baris baru",0\r\n'
+  expect(parseCsv(csv)).toEqual([
+    { judul: 'Judul, dengan "kutip"\ndan baris baru', jumlah: '0' },
+  ])
+})
+
+test('parseCsv: bolak-balik dengan toCsv tetap utuh', () => {
+  const asli = [{ a: 'x,y', b: 'dia bilang "halo"', c: 'baris1\nbaris2' }]
+  const kolom = [
+    { key: 'a', header: 'a' },
+    { key: 'b', header: 'b' },
+    { key: 'c', header: 'c' },
+  ]
+  expect(parseCsv(toCsv(asli, kolom))).toEqual(asli)
+})
+
+test('parseCsv: BOM dibuang, sel kosong tetap ada, baris kosong dilewati', () => {
+  expect(parseCsv(`${BOM}a,b\r\n1,\r\n\r\n`)).toEqual([{ a: '1', b: '' }])
+})
+
+test('parseCsv: kolom kurang diisi string kosong, bukan undefined', () => {
+  expect(parseCsv('a,b,c\r\n1,2\r\n')).toEqual([{ a: '1', b: '2', c: '' }])
+})

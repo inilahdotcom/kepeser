@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull, isNull, type SQL } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, sql, type SQL } from 'drizzle-orm'
 import { useDb } from '../../db/client'
 import { STATUSES, tickets, users, type Status } from '../../db/schema'
 
@@ -28,7 +28,20 @@ export default defineEventHandler(async (event) => {
   else if (typeof q.assigneeId === 'string' && q.assigneeId)
     where.push(eq(tickets.assigneeId, Number(q.assigneeId)))
 
-  return db
+  const kondisi = where.length ? and(...where) : undefined
+
+  // Total dihitung terpisah supaya UI bisa bilang "1–25 dari 208". Tanpa ini,
+  // daftar yang terpotong terlihat persis seperti daftar yang memang pendek.
+  const [hitung] = await db
+    .select({ total: sql<number>`count(*)` })
+    .from(tickets)
+    .where(kondisi)
+  const total = hitung?.total ?? 0
+
+  const perPage = Math.min(Math.max(Number(q.perPage) || 25, 1), 200)
+  const page = Math.max(Number(q.page) || 1, 1)
+
+  const rows = await db
     .select({
       id: tickets.id,
       title: tickets.title,
@@ -49,7 +62,10 @@ export default defineEventHandler(async (event) => {
     })
     .from(tickets)
     .leftJoin(users, eq(tickets.assigneeId, users.id))
-    .where(where.length ? and(...where) : undefined)
+    .where(kondisi)
     .orderBy(desc(tickets.createdAt))
-    .limit(Math.min(Number(q.limit) || 200, 500))
+    .limit(perPage)
+    .offset((page - 1) * perPage)
+
+  return { rows, total, page, perPage }
 })

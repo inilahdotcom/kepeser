@@ -75,6 +75,26 @@ dibandingkan sumber vs hasil, `PRAGMA integrity_check`, dan lampiran dicek dua a
 (dirujuk tapi hilang / ada tapi yatim). Gagal salah satu → exit non-nol, bukan diam-diam
 menghasilkan berkas rusak.
 
+### Impor papan task dari Google Sheets
+
+```bash
+CSV="~/Downloads/Task Board IT inilah.com - Backend.csv" \
+DATABASE_URL=./kepeser.db bun run import:taskboard
+```
+
+Aman dijalankan ulang: baris yang judul + deskripsinya sudah ada dilewati, jadi ekspor ulang
+papan yang sudah bertambah hanya memasukkan yang baru.
+
+Pemetaannya ada di `scripts/import-taskboard.cjs` dan sengaja dibuat bisa diperiksa:
+kategori `bug` vs `request_fitur` ditentukan aturan kata kunci
+(`fix|perbaiki|perbaikan|bug|error|gagal`) dengan **7 pengecualian yang ditulis eksplisit**
+beserta alasannya — bukan disembunyikan di dalam regex.
+
+⚠️ Sumbernya hanya punya tanggal tanpa jam, sementara lebih dari separuh baris mulai dan
+selesai di hari yang sama. Jam dipatok 09:00–17:00 supaya KPI "median waktu penyelesaian"
+tidak jadi nol yang menyesatkan. Itu **perkiraan, bukan data terukur**, dan ditulis apa
+adanya di deskripsi tiap tiket hasil impor.
+
 ### Export CSV (untuk dibaca, bukan untuk dipulihkan)
 
 ```bash

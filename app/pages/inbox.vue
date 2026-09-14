@@ -4,7 +4,10 @@ import { CATEGORY_LABEL, fmtDate } from '~/lib/format'
 
 useHead({ title: 'Approval — Kepeser' })
 
-const { data: rows, refresh } = await useFetch('/api/tickets', { query: { status: 'pending' } })
+const { data, refresh } = await useFetch('/api/tickets', {
+  query: { status: 'pending', perPage: 100 },
+})
+const rows = computed(() => data.value?.rows ?? [])
 const busy = ref<number | null>(null)
 const reasons = reactive<Record<number, string>>({})
 
