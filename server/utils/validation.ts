@@ -59,6 +59,20 @@ export const archiveSchema = z.object({ archived: z.boolean() })
 /** Sembunyikan / tampilkan tiket di papan publik halaman depan. */
 export const boardSchema = z.object({ hidden: z.boolean() })
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(160),
+})
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(20).max(200),
+  password: z.string().min(8).max(200),
+})
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(8).max(200),
+})
+
 export const createUserSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(160),
   name: trimmed(2, 80),
@@ -104,6 +118,9 @@ const FIELD_LABEL: Record<string, string> = {
   role: 'Peran',
   jobTitle: 'Jabatan',
   status: 'Status',
+  token: 'Tautan reset',
+  currentPassword: 'Password saat ini',
+  newPassword: 'Password baru',
   assigneeId: 'Penanggung jawab',
   dueAt: 'Target selesai',
   note: 'Catatan',

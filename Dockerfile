@@ -19,6 +19,7 @@ COPY --from=build /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 COPY --from=build /app/node_modules/bindings ./node_modules/bindings
 COPY --from=build /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
 COPY --from=build /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
+COPY --from=build /app/node_modules/nodemailer ./node_modules/nodemailer
 RUN mkdir -p /app/data
 EXPOSE 2112
 CMD ["node", ".output/server/index.mjs"]

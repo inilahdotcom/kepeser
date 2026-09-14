@@ -17,6 +17,12 @@ services:
       DATABASE_URL: /app/data/kepeser.db
       UPLOAD_DIR: /app/data/uploads
       ALLOWED_EMAIL_DOMAIN: ${ALLOWED_EMAIL_DOMAIN:-inilah.com}
+      APP_URL: ${APP_URL:-http://localhost:2112}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-Kepeser <no-reply@inilah.com>}
       NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD:?wajib diisi, minimal 32 karakter}
       SEED_SUPERVISOR_EMAIL: ${SEED_SUPERVISOR_EMAIL:-}
       SEED_SUPERVISOR_PASSWORD: ${SEED_SUPERVISOR_PASSWORD:-}

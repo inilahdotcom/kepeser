@@ -53,6 +53,71 @@ docker compose up -d --build
 `migrate` jalan sekali sampai selesai, baru `web` start. DB ada di volume `kepeser-data`,
 jadi `docker compose down && up` tidak menghapus data.
 
+## Cadangan & pemulihan
+
+```bash
+bun run backup          # unduh dari server -> ./backups/kepeser-backup-<tanggal>.tar.gz
+```
+
+Isinya `kepeser.db` (snapshot konsisten) + `uploads/` (semua lampiran gambar).
+
+**Kenapa tidak `docker compose cp kepeser.db` saja** — dua alasan, keduanya gagal diam-diam:
+
+1. **DB memakai WAL.** Tulisan terbaru menggantung di `kepeser.db-wal` dan belum tentu ada
+   di `.db`. Menyalin berkasnya selagi aplikasi menulis menghasilkan snapshot basi, atau
+   korup. `scripts/backup.cjs` memakai `db.backup()` — API backup bawaan SQLite yang
+   konsisten walau ada tulisan berjalan.
+2. **Lampiran tidak ada di dalam DB.** `tickets.image_path` cuma menyimpan nama berkas;
+   isinya di `UPLOAD_DIR`. Cadangan tanpa `uploads/` = tiket yang menunjuk gambar hilang.
+
+Skripnya memverifikasi hasilnya sebelum menyatakan sukses: jumlah baris tiap tabel
+dibandingkan sumber vs hasil, `PRAGMA integrity_check`, dan lampiran dicek dua arah
+(dirujuk tapi hilang / ada tapi yatim). Gagal salah satu → exit non-nol, bukan diam-diam
+menghasilkan berkas rusak.
+
+### Export CSV (untuk dibaca, bukan untuk dipulihkan)
+
+```bash
+bun run export:csv      # -> ./exports/kepeser-export-<tanggal>/
+```
+
+Menghasilkan `tickets.csv`, `users.csv`, `ticket_events.csv` — siap dibuka di Excel atau
+Google Sheets. Dari server:
+
+```bash
+docker compose exec -T web node scripts/export-csv.cjs
+docker compose cp web:/app/exports ./exports
+```
+
+Yang **tidak** ikut: `users.password_hash` (hash scrypt, tidak berguna di spreadsheet dan
+tidak ada alasan menyebarkannya), tabel `password_resets`, dan `__drizzle_migrations`.
+
+Kolomnya dibuat terbaca — ID di-join ke nama (`penanggung_jawab: Dewi Lestari`, bukan
+`assignee_id: 2`) dan epoch jadi `2026-09-10 16:20` yang terbaca **dan** terurut benar
+sebagai teks. Nilai enum (`in_progress`, `bug`) sengaja dibiarkan apa adanya: sudah
+terbaca, stabil untuk pivot/filter, dan tidak ikut basi kalau label UI berubah.
+
+Tiap berkas diawali BOM UTF-8 — tanpa itu Excel di Windows membaca UTF-8 sebagai Latin-1
+dan semua karakter non-ASCII jadi mojibake.
+
+### Memulihkan ke laptop
+
+```bash
+tar xzf backups/kepeser-backup-2026-09-14-1030.tar.gz
+cd kepeser-backup-2026-09-14-1030
+DATABASE_URL=$PWD/kepeser.db UPLOAD_DIR=$PWD/uploads bun run dev
+```
+
+### Memulihkan ke server (pindah VPS / pemulihan bencana)
+
+```bash
+docker compose stop web
+docker compose cp kepeser.db web:/app/data/kepeser.db
+docker compose cp uploads    web:/app/data/uploads
+docker compose run --rm migrate     # aman: no-op kalau skemanya sudah mutakhir
+docker compose start web
+```
+
 ## Peta kode
 
 ```
@@ -119,6 +184,16 @@ dan diuji lewat `curl` langsung ke API:
   hanya terlihat oleh orang yang sudah tahu passwordnya.
 - `DELETE /api/users/[id]` hanya menghapus baris `pending`. Akun aktif tidak bisa dihapus
   lewat jalur mana pun — hanya `disabled`, supaya KPI historisnya utuh.
+- Reset password: tautan dirakit dari env **`APP_URL`**, tidak pernah dari header `Host`
+  — penyerang yang memalsukan `Host` bisa membuat tautan di email korban menunjuk ke
+  servernya dan mencuri tokennya.
+- Yang disimpan di `password_resets` adalah **hash SHA-256** tokennya, bukan tokennya.
+  Sekali pakai, berlaku 1 jam, dan permintaan baru membatalkan yang lama.
+- `/api/auth/forgot-password` menjawab **sama persis** untuk email terdaftar maupun tidak.
+  Akun `pending` dan `disabled` tidak pernah menerima token — mantan karyawan tidak bisa
+  merebut akses kembali.
+- Ganti password mandiri **mewajibkan password lama**, supaya laptop yang ditinggal
+  terbuka tidak cukup untuk membajak akun.
 - Edit tiket: hanya supervisor atau penanggung jawabnya. Arsip/pulihkan: supervisor saja.
 - Semua pesan validasi bahasa Indonesia, dari satu peta di `server/utils/validation.ts`
   (`Deskripsi minimal 10 karakter.`, bukan `Too small: expected string to have >=10`).
@@ -135,6 +210,25 @@ di menu "Akun" memberi tahu supervisor ada permintaan yang menunggu.
 
 Menolak pendaftaran = barisnya dihapus, bukan ditandai `rejected` — supaya orang yang salah
 ketik email bisa mendaftar ulang tanpa terblokir indeks unik email.
+
+## Password
+
+Tiga jalur, untuk tiga kondisi berbeda:
+
+| Kondisi | Jalur |
+|---|---|
+| Masih bisa login | `/me` → Ganti password (butuh password lama) |
+| Lupa password | `/reset-password` → tautan dikirim ke email → `/reset-password/<token>` |
+| Terkunci total | Supervisor reset di `/admin/users`, atau `scripts/set-user.cjs` di server |
+
+Email dikirim lewat SMTP (`SMTP_HOST` dst). **Kalau `SMTP_HOST` kosong, tautannya dicetak
+ke log server** alih-alih gagal — alur ini jadi bisa diuji di dev tanpa kredensial, dan
+salah konfigurasi di produksi terlihat di log, bukan hilang senyap.
+
+⚠️ **Batasan yang diketahui:** `nuxt-auth-utils` memakai cookie tersegel tanpa penyimpanan
+sesi di server, jadi setelah password diganti, sesi lama **tidak bisa dicabut** dan tetap
+hidup sampai kedaluwarsa sendiri. Kalau akun dicurigai dibajak, nonaktifkan akunnya di
+`/admin/users` — itu memblokir login berikutnya.
 
 ## Papan publik
 

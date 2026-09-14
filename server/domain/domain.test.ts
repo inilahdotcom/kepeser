@@ -207,3 +207,37 @@ test('domain email: allowed kosong berarti bebas', () => {
   expect(emailDomainAllowed('siapa@pun.com', null)).toBe(true)
   expect(emailDomainAllowed('siapa@pun.com', undefined)).toBe(true)
 })
+
+import { hashResetToken, makeResetToken, resetTokenState } from './reset-token'
+
+test('token reset: yang disimpan hash, bukan tokennya', () => {
+  const { token, tokenHash } = makeResetToken()
+  expect(tokenHash).not.toBe(token)
+  expect(tokenHash).toMatch(/^[0-9a-f]{64}$/)
+  // Hash harus bisa dihitung ulang dari token — dasar pencocokan saat link diklik.
+  expect(hashResetToken(token)).toBe(tokenHash)
+})
+
+test('token reset: dua token tidak pernah sama', () => {
+  const a = makeResetToken()
+  const b = makeResetToken()
+  expect(a.token).not.toBe(b.token)
+  expect(a.tokenHash).not.toBe(b.tokenHash)
+  expect(a.token.length).toBeGreaterThanOrEqual(43) // 32 byte base64url
+})
+
+test('keadaan token: sah, kedaluwarsa, terpakai, tidak dikenal', () => {
+  const now = 1_000_000
+  expect(resetTokenState({ expiresAt: now + 60, usedAt: null }, now)).toBe('valid')
+  expect(resetTokenState({ expiresAt: now - 1, usedAt: null }, now)).toBe('expired')
+  // Tepat di detik kedaluwarsa sudah tidak berlaku — batasnya inklusif.
+  expect(resetTokenState({ expiresAt: now, usedAt: null }, now)).toBe('expired')
+  expect(resetTokenState(undefined, now)).toBe('unknown')
+  expect(resetTokenState(null, now)).toBe('unknown')
+})
+
+test('keadaan token: sudah terpakai menang atas belum kedaluwarsa', () => {
+  const now = 1_000_000
+  // Masih dalam masa berlaku tapi sudah dipakai -> tetap ditolak.
+  expect(resetTokenState({ expiresAt: now + 999, usedAt: now - 10 }, now)).toBe('used')
+})

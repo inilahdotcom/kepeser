@@ -147,6 +147,32 @@ export const ticketEvents = sqliteTable(
   (t) => [index('ticket_events_ticket').on(t.ticketId, t.createdAt)],
 )
 
+/**
+ * Token reset password. Yang disimpan hash-nya (lihat server/domain/reset-token.ts);
+ * tokennya sendiri hanya pernah ada di email penerima.
+ */
+export const passwordResets = sqliteTable(
+  'password_resets',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: integer('expires_at').notNull(),
+    /** Sekali pakai. Terisi = hangus. */
+    usedAt: integer('used_at'),
+    createdAt: integer('created_at')
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (t) => [
+    uniqueIndex('password_resets_token').on(t.tokenHash),
+    index('password_resets_user').on(t.userId),
+  ],
+)
+
 export type User = typeof users.$inferSelect
 export type Ticket = typeof tickets.$inferSelect
 export type TicketEvent = typeof ticketEvents.$inferSelect
+export type PasswordReset = typeof passwordResets.$inferSelect

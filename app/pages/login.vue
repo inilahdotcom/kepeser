@@ -45,6 +45,9 @@ async function submit() {
       <Button type="submit" :disabled="busy" class="mt-2 h-10 w-full font-bold">
         {{ busy ? 'Memeriksa…' : 'Masuk' }}
       </Button>
+      <p class="text-sm text-mute-foreground">
+        <NuxtLink to="/reset-password">Lupa password</NuxtLink>
+      </p>
     </form>
     <p class="mt-4 text-center text-sm text-mute-foreground">
       Belum punya akun? <NuxtLink to="/daftar">Daftar di sini</NuxtLink>.
