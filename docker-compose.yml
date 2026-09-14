@@ -14,9 +14,6 @@ services:
       migrate:
         condition: service_completed_successfully
     environment:
-      # Nitro mendengarkan 3000 kalau PORT tidak diset — sementara ports: memetakan
-      # 2112. Tanpa baris ini container hidup tapi tidak bisa dihubungi sama sekali.
-      PORT: 2112
       DATABASE_URL: /app/data/kepeser.db
       UPLOAD_DIR: /app/data/uploads
       ALLOWED_EMAIL_DOMAIN: ${ALLOWED_EMAIL_DOMAIN:-inilah.com}
@@ -31,7 +28,7 @@ services:
       SEED_SUPERVISOR_PASSWORD: ${SEED_SUPERVISOR_PASSWORD:-}
       SEED_SUPERVISOR_NAME: ${SEED_SUPERVISOR_NAME:-IT Supervisor}
     ports:
-      - "2112:2112"
+      - "2112:3000"
     volumes:
       - kepeser-data:/app/data
     restart: unless-stopped
